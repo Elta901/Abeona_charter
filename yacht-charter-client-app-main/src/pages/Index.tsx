@@ -1684,9 +1684,10 @@ function ManagerClients({ token }: { token?: string }) {
   const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
 
   const t = token || localStorage.getItem("yc_token") || "";
-  const api = (body: object) => fetch(`${API.bookings}?token=${t}`, { method: "POST", headers: { "Content-Type": "application/json" },  body: JSON.stringify(body) 
+  const api = (body: object) => fetch(`${API.bookings}?token=${t}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+});
 
-  const load = () => {
+const load = () => {
     setLoading(true);
    fetch(`${API.bookings}?token=${t}`, {
   method: "POST",
