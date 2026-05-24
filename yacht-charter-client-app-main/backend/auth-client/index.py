@@ -94,10 +94,13 @@ def handle_send_otp(body: dict) -> dict:
         code = str(random.randint(100000, 999999))
         expires_at = datetime.now(timezone.utc) + timedelta(minutes=15)
 
-       cur.execute(
-    "INSERT INTO sessions (token, user_id, role, expires_at) VALUES (%s, %s, %s, %s)",
-    [token, client_id, "client", session_expires_at],
-    )
+        cur.execute(
+            """
+            INSERT INTO client_otp (client_id, email, code, expires_at, used)
+            VALUES (%s, %s, %s, %s, false)
+            """,
+            [client_id, email, code, expires_at],
+        )
         conn.commit()
         cur.close()
 
@@ -166,9 +169,10 @@ def handle_verify_otp(body: dict) -> dict:
         token = secrets.token_hex(32)
         session_expires_at = datetime.now(timezone.utc) + timedelta(days=7)
 
+        # ✅ user_id — правильное имя колонки, совместимое с bookings-api
         cur.execute(
             """
-            INSERT INTO sessions (token, client_id, role, expires_at)
+            INSERT INTO sessions (token, user_id, role, expires_at)
             VALUES (%s, %s, %s, %s)
             """,
             [token, client_id, "client", session_expires_at],
@@ -221,7 +225,6 @@ def handler(event, context):
     else:
         body = raw_body or {}
 
-    # Определяем действие: по пути или по полю action в теле запроса
     action = body.get("action", "")
 
     if path == "/send-otp" or (path == "/" and action == "send-otp"):
