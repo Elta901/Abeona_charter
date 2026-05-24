@@ -2007,7 +2007,6 @@ function ManagerClients({ token }: { token?: string }) {
       )}
     </div>
   );
-}
 
   // Экран редактирования
   if (editingClient) return (
