@@ -2094,7 +2094,7 @@ const formFields = (
       )}
 
       <div className="ocean-card rounded-2xl p-6">
-        <FormFields />
+        {formFields}    {/* ← вот так */}
       </div>
 
       <div className="flex gap-3">
