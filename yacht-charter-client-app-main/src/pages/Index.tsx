@@ -7,9 +7,9 @@ const LOGO_URL = "https://cdn.poehali.dev/projects/cfd2a8a4-eb7e-4847-9fbc-3fbbb
 
 // ─── API URLs ─────────────────────────────────────────────────────────────────
 const API = {
-  authManager: "https://functions.poehali.dev/c97bf12a-5428-4ee6-8007-744b50b22d45",
-  authClient: "https://functions.poehali.dev/a5fae4a7-68c6-4b61-9cd4-e1235bd43b35",
-  bookings: "https://functions.poehali.dev/5dc8c023-b1ba-40cd-91c6-8005c35b7552",
+  authManager: "/api/auth-manager",
+  authClient: "/api/auth-client",
+  bookings: "/api/bookings",
 };
 
 // ─── Types ────────────────────────────────────────────────────────────────────
