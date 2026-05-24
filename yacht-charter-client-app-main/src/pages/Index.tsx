@@ -2013,6 +2013,7 @@ const formFields = (
     </div>
   </div>
 );
+  
   // ── Экран редактирования ──────────────────────────────────────────────────
   if (editingClient) return (
     <div className="space-y-5 animate-fade-in">
