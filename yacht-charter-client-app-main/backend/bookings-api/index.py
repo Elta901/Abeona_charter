@@ -1,7 +1,5 @@
 """
 API для управления бронированиями яхт.
-Поддерживает просмотр бронирований (для клиента — только свои, для менеджера — все)
-и создание новых бронирований (только для менеджера).
 """
 
 import json
@@ -15,7 +13,7 @@ MAIN_DB_SCHEMA = os.environ["MAIN_DB_SCHEMA"]
 
 CORS_HEADERS = {
     "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, X-Auth-Token",
     "Content-Type": "application/json",
 }
@@ -38,15 +36,9 @@ def json_response(status: int, body) -> dict:
 
 
 def resolve_session(token: str, conn) -> dict | None:
-    """
-    Проверяет токен сессии в таблице sessions.
-    Возвращает словарь с полями role, user_id или None если сессия не действительна.
-    """
     cur = conn.cursor()
     cur.execute(
-        """
-        SELECT role, user_id, expires_at FROM sessions WHERE token = %s
-        """,
+        "SELECT role, user_id, expires_at FROM sessions WHERE token = %s",
         [token],
     )
     row = cur.fetchone()
@@ -67,11 +59,6 @@ def resolve_session(token: str, conn) -> dict | None:
 
 
 def handle_get_bookings(session: dict, conn) -> dict:
-    """
-    Возвращает список бронирований.
-    Клиент получает только свои бронирования.
-    Менеджер-администратор видит все, обычный менеджер — только созданные им.
-    """
     cur = conn.cursor()
 
     base_query = """
@@ -92,7 +79,6 @@ def handle_get_bookings(session: dict, conn) -> dict:
     if role == "client":
         cur.execute(base_query + " WHERE b.client_id = %s ORDER BY b.date_from DESC", [user_id])
     else:
-        # Проверяем is_admin у менеджера
         cur.execute("SELECT is_admin FROM managers WHERE id = %s", [user_id])
         manager_row = cur.fetchone()
         is_admin = manager_row[0] if manager_row else False
@@ -111,17 +97,11 @@ def handle_get_bookings(session: dict, conn) -> dict:
 
 
 def handle_create_booking(body: dict, session: dict, conn) -> dict:
-    """
-    Создаёт новое бронирование яхты.
-    Доступно только менеджерам. Возвращает созданную запись.
-    Если передан client_name/client_email — создаёт клиента автоматически.
-    """
     if not body.get("yacht_name") or not body.get("date_from") or not body.get("date_to"):
         return json_response(400, {"error": "Поля yacht_name, date_from, date_to обязательны"})
 
     cur = conn.cursor()
 
-    # Автосоздание клиента по имени/email
     client_id = body.get("client_id")
     client_name_in = (body.get("client_name") or "").strip()
     client_email_in = (body.get("client_email") or "").strip().lower()
@@ -145,31 +125,7 @@ def handle_create_booking(body: dict, session: dict, conn) -> dict:
             )
             client_id = cur.fetchone()[0]
 
-    yacht_name = body.get("yacht_name")
-    yacht_type = body.get("yacht_type")
-    marina = body.get("marina")
-    country = body.get("country")
-    flag = body.get("flag")
-    date_from = body.get("date_from")
-    date_to = body.get("date_to")
-    status = body.get("status", "pending")
-    captain = body.get("captain")
-    cabins = body.get("cabins")
-    berths = body.get("berths")
-    length = body.get("length")
-    engine = body.get("engine")
-    notes = body.get("notes")
-    marina_address = body.get("marina_address")
-    marina_vhf = body.get("marina_vhf")
-    marina_phone = body.get("marina_phone")
-    marina_email = body.get("marina_email")
-    marina_checkin = body.get("marina_checkin")
-    marina_checkout = body.get("marina_checkout")
-    marina_coordinates = body.get("marina_coordinates")
-    created_by = body.get("manager_id") or session.get("user_id")
-
-    # Обновляем телефон клиента если передан
-    client_phone = body.get("client_phone") or (body.get("client_email") and "")
+    client_phone = body.get("client_phone") or ""
     if client_phone and client_id:
         cur.execute("UPDATE clients SET phone = %s WHERE id = %s AND (phone IS NULL OR phone = '')", [client_phone, client_id])
 
@@ -194,18 +150,23 @@ def handle_create_booking(body: dict, session: dict, conn) -> dict:
             length, engine, notes, client_id, created_by
         """,
         [
-            client_id, yacht_name, yacht_type, marina, country, flag,
-            date_from, date_to, status, captain, cabins, berths,
-            length, engine, notes, created_by,
-            marina_address, marina_vhf, marina_phone, marina_email,
-            marina_checkin, marina_checkout, marina_coordinates,
+            client_id, body.get("yacht_name"), body.get("yacht_type"),
+            body.get("marina"), body.get("country"), body.get("flag"),
+            body.get("date_from"), body.get("date_to"),
+            body.get("status", "pending"),
+            body.get("captain"), body.get("cabins"), body.get("berths"),
+            body.get("length"), body.get("engine"), body.get("notes"),
+            body.get("manager_id") or session.get("user_id"),
+            body.get("marina_address"), body.get("marina_vhf"),
+            body.get("marina_phone"), body.get("marina_email"),
+            body.get("marina_checkin"), body.get("marina_checkout"),
+            body.get("marina_coordinates"),
         ],
     )
     row = cur.fetchone()
     columns = [desc[0] for desc in cur.description]
     conn.commit()
 
-    # Получаем имя клиента
     cur.execute("SELECT name FROM clients WHERE id = %s", [client_id])
     client_row = cur.fetchone()
     cur.close()
@@ -216,38 +177,49 @@ def handle_create_booking(body: dict, session: dict, conn) -> dict:
     return json_response(201, booking)
 
 
+def parse_body(event: dict) -> dict:
+    """Парсит тело запроса из event — вынесено отдельно для переиспользования."""
+    raw_body = event.get("body") or "{}"
+    is_base64 = event.get("isBase64Encoded", False)
+    if isinstance(raw_body, str):
+        try:
+            if is_base64:
+                import base64
+                raw_body = base64.b64decode(raw_body).decode("utf-8")
+            return json.loads(raw_body) if raw_body.strip() else {}
+        except Exception:
+            try:
+                import base64
+                decoded = base64.b64decode(raw_body + "==").decode("utf-8")
+                return json.loads(decoded)
+            except Exception:
+                return {}
+    return raw_body or {}
+
+
 def handler(event, context):
-    """
-    Главный обработчик API бронирований яхт.
-    Маршруты:
-      GET  / — список бронирований (клиент видит свои, менеджер видит все)
-      POST / — создание бронирования (только менеджер)
-    Требует заголовок X-Auth-Token с действующим токеном сессии.
-    """
     method = (event.get("httpMethod") or event.get("method") or "GET").upper()
     path = event.get("path", "/").rstrip("/") or "/"
     headers = event.get("headers") or {}
-
     headers_lower = {k.lower(): v for k, v in headers.items()}
 
     if method == "OPTIONS":
-        return {
-            "statusCode": 204,
-            "headers": CORS_HEADERS,
-            "body": "",
-        }
+        return {"statusCode": 204, "headers": CORS_HEADERS, "body": ""}
 
-    # Токен из заголовка, query string или тела запроса
+    # Токен
     token = (headers_lower.get("x-auth-token") or "").strip()
     if not token:
         query = event.get("queryStringParameters") or {}
         token = (query.get("token") or "").strip()
     if not token:
-        # Попробуем прочитать из тела (если тело уже распарсено ниже)
-        pass
-
-    if not token:
         return json_response(401, {"error": "Токен не передан"})
+
+    # ✅ Парсим body ОДИН РАЗ в самом начале — до всех if-блоков
+    body = parse_body(event) if method != "GET" else {}
+
+    # Виртуальный метод через _method в теле
+    virtual_method = (body.get("_method") or "").upper()
+    effective_method = virtual_method if virtual_method in ("PUT", "DELETE") else method
 
     conn = None
     try:
@@ -257,35 +229,18 @@ def handler(event, context):
         if session is None:
             return json_response(401, {"error": "Сессия не найдена или истекла"})
 
+        # ── GET — список бронирований ──────────────────────────────────────
         if method == "GET" and path == "/":
             return handle_get_bookings(session, conn)
 
-        if method == "POST" and path == "/":
+        # ── POST — создать бронирование ────────────────────────────────────
+        if method == "POST" and path == "/" and not virtual_method and not body.get("_action"):
             if session["role"] != "manager":
                 return json_response(403, {"error": "Доступ запрещён: требуется роль менеджера"})
-
-            raw_body = event.get("body") or "{}"
-            is_base64 = event.get("isBase64Encoded", False)
-            if isinstance(raw_body, str):
-                try:
-                    if is_base64:
-                        import base64
-                        raw_body = base64.b64decode(raw_body).decode("utf-8")
-                    body = json.loads(raw_body) if raw_body.strip() else {}
-                except Exception:
-                    try:
-                        import base64
-                        decoded = base64.b64decode(raw_body + "==").decode("utf-8")
-                        body = json.loads(decoded)
-                    except Exception:
-                        body = {}
-            else:
-                body = raw_body or {}
-
             return handle_create_booking(body, session, conn)
 
-        # PUT — обновление бронирования
-        if method == "PUT" or (method == "POST" and body.get("_method") == "PUT"):
+        # ── PUT — обновить бронирование ────────────────────────────────────
+        if effective_method == "PUT" or (method == "POST" and body.get("_method") == "PUT"):
             if session["role"] != "manager":
                 return json_response(403, {"error": "Доступ запрещён"})
             booking_id = body.get("id")
@@ -324,7 +279,6 @@ def handler(event, context):
             cur = conn.cursor()
             cur.execute(f"UPDATE bookings SET {set_clause} WHERE id = %s", values)
 
-            # Обновляем клиента если переданы данные
             client_name = body.get("client_name")
             client_phone = body.get("client_phone")
             client_email = body.get("client_email")
@@ -345,8 +299,8 @@ def handler(event, context):
             cur.close()
             return json_response(200, {"ok": True})
 
-        # DELETE бронирования
-        if method == "DELETE" or (method == "POST" and body.get("_method") == "DELETE" and body.get("_target") == "booking"):
+        # ── DELETE — удалить бронирование ──────────────────────────────────
+        if effective_method == "DELETE" or (method == "POST" and body.get("_method") == "DELETE" and body.get("_target") == "booking"):
             if session["role"] != "manager":
                 return json_response(403, {"error": "Доступ запрещён"})
             booking_id = body.get("id")
@@ -361,8 +315,8 @@ def handler(event, context):
             cur.close()
             return json_response(200, {"ok": True})
 
-        # GET /clients — список клиентов
-        if path == "/clients" or (method == "GET" and body.get("_action") == "list-clients"):
+        # ── list-clients ───────────────────────────────────────────────────
+        if path == "/clients" or body.get("_action") == "list-clients":
             if session["role"] != "manager":
                 return json_response(403, {"error": "Доступ запрещён"})
             cur = conn.cursor()
@@ -378,8 +332,8 @@ def handler(event, context):
             cur.close()
             return json_response(200, {"clients": [dict(zip(cols, r)) for r in rows]})
 
-        # POST /clients — создать клиента
-        if path == "/clients" and method == "POST" or (method == "POST" and body.get("_action") == "create-client"):
+        # ── create-client ──────────────────────────────────────────────────
+        if body.get("_action") == "create-client":
             if session["role"] != "manager":
                 return json_response(403, {"error": "Доступ запрещён"})
             name = (body.get("name") or "").strip()
@@ -404,14 +358,25 @@ def handler(event, context):
             cur.close()
             return json_response(201, dict(zip(cols, row)))
 
-        # PUT /clients — обновить клиента
-        if method == "POST" and body.get("_action") == "update-client":
+        # ── update-client ──────────────────────────────────────────────────
+        if body.get("_action") == "update-client":
             if session["role"] != "manager":
                 return json_response(403, {"error": "Доступ запрещён"})
             client_id = body.get("id")
             if not client_id:
                 return json_response(400, {"error": "Не передан id клиента"})
-            fields = [("name", body.get("name")), ("email", body.get("email")), ("phone", body.get("phone"))]
+            fields = [
+                ("name", body.get("name")),
+                ("email", body.get("email")),
+                ("phone", body.get("phone")),
+                ("telegram", body.get("telegram")),
+                ("whatsapp", body.get("whatsapp")),
+                ("birth_date", body.get("birth_date")),
+                ("nationality", body.get("nationality")),
+                ("passport_series", body.get("passport_series")),
+                ("passport_number", body.get("passport_number")),
+                ("notes", body.get("notes")),
+            ]
             updates = [(k, v) for k, v in fields if v is not None]
             if not updates:
                 return json_response(400, {"error": "Нет данных для обновления"})
@@ -425,15 +390,14 @@ def handler(event, context):
             cur.close()
             return json_response(200, dict(zip(cols, row)))
 
-        # DELETE /clients — удалить клиента и все его бронирования
-        if method == "POST" and body.get("_action") == "delete-client":
+        # ── delete-client ──────────────────────────────────────────────────
+        if body.get("_action") == "delete-client":
             if session["role"] != "manager":
                 return json_response(403, {"error": "Доступ запрещён"})
             client_id = body.get("id")
             if not client_id:
                 return json_response(400, {"error": "Не передан id клиента"})
             cur = conn.cursor()
-            # Удаляем все связанные записи бронирований клиента
             cur.execute("SELECT id FROM bookings WHERE client_id = %s", [client_id])
             bids = [r[0] for r in cur.fetchall()]
             for bid in bids:
