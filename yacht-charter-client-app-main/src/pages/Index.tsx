@@ -1931,15 +1931,95 @@ function ManagerClients({ token }: { token?: string }) {
     </div>
   );
 
-  // ── Список клиентов ───────────────────────────────────────────────────────
-  return (
-    <div className="space-y-5 animate-fade-in">
-      {msg && (
-        <div className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm border animate-fade-in ${msg.type === "ok" ? "bg-emerald-50 border-emerald-200 text-emerald-700" : "bg-red-50 border-red-200 text-red-700"}`}>
-          <Icon name={msg.type === "ok" ? "CheckCircle" : "AlertCircle"} size={15} />{msg.text}
+ // ── Экран редактирования ──────────────────────────────────────────────────
+if (editingClient) return (
+  <div className="space-y-5 animate-fade-in">
+    <div className="flex items-center gap-3">
+      <button onClick={() => setEditingClient(null)} className="w-9 h-9 rounded-xl bg-[hsl(199,60%,88%)] flex items-center justify-center hover:bg-[hsl(199,50%,80%)] transition-colors">
+        <Icon name="ArrowLeft" size={17} className="text-[hsl(213,70%,28%)]" />
+      </button>
+      <div>
+        <h2 className="font-display text-2xl font-semibold text-[hsl(213,80%,15%)]">{editingClient.name}</h2>
+        <p className="text-sm text-muted-foreground">{editingClient.booking_count} бронирований</p>
+      </div>
+    </div>
+    {msg && <div className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm border animate-fade-in ${msg.type === "ok" ? "bg-emerald-50 border-emerald-200 text-emerald-700" : "bg-red-50 border-red-200 text-red-700"}`}><Icon name={msg.type === "ok" ? "CheckCircle" : "AlertCircle"} size={15} />{msg.text}</div>}
+    <div className="ocean-card rounded-2xl p-6 space-y-4">
+      <h3 className="font-display text-xl font-semibold text-[hsl(213,80%,15%)]">Данные клиента</h3>
+      {[
+        { key: "name", label: "Имя и фамилия", placeholder: "Иван Иванов" },
+        { key: "email", label: "Email", placeholder: "ivan@example.com", type: "email" },
+        { key: "phone", label: "Телефон", placeholder: "+7 916 000-00-00" },
+      ].map(f => (
+        <div key={f.key}>
+          <label className="block text-xs font-medium text-muted-foreground mb-1.5">{f.label}</label>
+          <input type={f.type || "text"} className={inp} placeholder={f.placeholder}
+            value={form[f.key as keyof typeof EMPTY_CLIENT]} onChange={e => set(f.key, e.target.value)} />
         </div>
+      ))}
+    </div>
+    <div className="flex gap-3">
+      <button onClick={() => setEditingClient(null)} className="flex-1 border-2 border-[hsl(213,70%,28%)] text-[hsl(213,70%,28%)] py-3 rounded-2xl font-semibold text-sm hover:bg-blue-50 transition-colors">Отмена</button>
+      <button onClick={handleUpdate} disabled={saving} className="flex-1 bg-[hsl(213,70%,28%)] text-white py-3 rounded-2xl font-semibold text-sm hover:bg-[hsl(213,80%,20%)] transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
+        {saving ? <Icon name="Loader" size={16} className="animate-spin" /> : <Icon name="Save" size={16} />}
+        {saving ? "Сохраняем..." : "Сохранить"}
+      </button>
+    </div>
+    <div className="ocean-card rounded-2xl p-5 border-red-200 bg-red-50/50">
+      <h3 className="font-semibold text-red-700 text-sm mb-2 flex items-center gap-2"><Icon name="AlertTriangle" size={15} />Опасная зона</h3>
+      <p className="text-xs text-red-600 mb-3">Удаление профиля клиента удалит все его бронирования безвозвратно.</p>
+      {confirmDelete?.id === editingClient.id ? (
+        <div className="flex gap-2">
+          <button onClick={() => setConfirmDelete(null)} className="flex-1 border border-gray-300 text-gray-600 py-2 rounded-xl text-xs font-medium hover:bg-white transition-colors">Отмена</button>
+          <button onClick={() => handleDelete(editingClient)} disabled={deletingId === editingClient.id}
+            className="flex-1 bg-red-600 text-white py-2 rounded-xl text-xs font-semibold hover:bg-red-700 transition-colors disabled:opacity-60 flex items-center justify-center gap-1">
+            {deletingId === editingClient.id ? <Icon name="Loader" size={13} className="animate-spin" /> : <Icon name="Trash2" size={13} />}
+            Удалить навсегда
+          </button>
+        </div>
+      ) : (
+        <button onClick={() => setConfirmDelete(editingClient)} className="w-full border border-red-300 text-red-600 py-2.5 rounded-xl text-sm font-medium hover:bg-red-100 transition-colors flex items-center justify-center gap-2">
+          <Icon name="Trash2" size={14} /> Удалить профиль клиента
+        </button>
       )}
+    </div>
+  </div>
+);
 
+// ── Список клиентов ───────────────────────────────────────────────────────
+return (
+  <div className="space-y-5 animate-fade-in">
+    {msg && <div className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm border animate-fade-in ${msg.type === "ok" ? "bg-emerald-50 border-emerald-200 text-emerald-700" : "bg-red-50 border-red-200 text-red-700"}`}><Icon name={msg.type === "ok" ? "CheckCircle" : "AlertCircle"} size={15} />{msg.text}</div>}
+
+    {/* Создать клиента */}
+    {showCreate ? (
+      <div className="ocean-card rounded-2xl p-6 space-y-4 animate-fade-in">
+        <div className="flex items-center justify-between">
+          <h3 className="font-display text-xl font-semibold text-[hsl(213,80%,15%)]">Новый клиент</h3>
+          <button onClick={() => { setShowCreate(false); setMsg(null); }} className="text-muted-foreground hover:text-[hsl(213,80%,15%)]"><Icon name="X" size={18} /></button>
+        </div>
+        {msg?.type === "err" && <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm"><Icon name="AlertCircle" size={14} />{msg.text}</div>}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {[
+            { key: "name", label: "Имя и фамилия *", placeholder: "Иван Иванов" },
+            { key: "email", label: "Email *", placeholder: "ivan@example.com", type: "email" },
+            { key: "phone", label: "Телефон", placeholder: "+7 916 000-00-00" },
+          ].map(f => (
+            <div key={f.key}>
+              <label className="block text-xs font-medium text-muted-foreground mb-1.5">{f.label}</label>
+              <input type={f.type || "text"} className={inp} placeholder={f.placeholder}
+                value={form[f.key as keyof typeof EMPTY_CLIENT]} onChange={e => set(f.key, e.target.value)}
+                onKeyDown={e => e.key === "Enter" && handleCreate()} />
+            </div>
+          ))}
+        </div>
+        <button onClick={handleCreate} disabled={saving}
+          className="w-full bg-[hsl(213,70%,28%)] text-white py-3 rounded-2xl font-semibold text-sm hover:bg-[hsl(213,80%,20%)] transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
+          {saving ? <Icon name="Loader" size={16} className="animate-spin" /> : <Icon name="UserPlus" size={16} />}
+          {saving ? "Создаём..." : "Создать профиль"}
+        </button>
+      </div>
+    ) : (
       <button onClick={() => { setShowCreate(true); setForm(EMPTY_CLIENT); setMsg(null); }}
         className="w-full wave-bg text-white rounded-2xl p-4 flex items-center gap-3 hover:opacity-90 transition-opacity group">
         <div className="w-10 h-10 rounded-xl bg-[hsl(45,85%,55%)] flex items-center justify-center group-hover:scale-105 transition-transform flex-shrink-0">
@@ -1947,318 +2027,162 @@ function ManagerClients({ token }: { token?: string }) {
         </div>
         <div className="text-left">
           <p className="font-semibold">Создать профиль клиента</p>
-          <p className="text-blue-200 text-xs">Имя, email, телефон, паспорт и другие данные</p>
+          <p className="text-blue-200 text-xs">Имя, email, телефон</p>
         </div>
         <Icon name="ArrowRight" size={16} className="text-blue-200 ml-auto group-hover:translate-x-1 transition-transform" />
       </button>
+    )}
 
-      {clients.length > 0 && (
-        <div className="relative">
-          <Icon name="Search" size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <input
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-blue-100 bg-blue-50 text-sm outline-none focus:ring-2 focus:ring-[hsl(199,65%,45%)] transition"
-            placeholder="Поиск по имени, email или телефону..."
-            value={search} onChange={e => setSearch(e.target.value)}
-          />
-        </div>
-      )}
-
-      {loading ? (
-        <div className="py-10 text-center"><Icon name="Loader" size={24} className="animate-spin mx-auto text-muted-foreground" /></div>
-      ) : filteredClients.length === 0 ? (
-        <div className="ocean-card rounded-2xl p-10 text-center">
-          <Icon name="Users" size={36} className="text-[hsl(199,65%,45%)] mx-auto mb-3 opacity-40" />
-          <p className="font-display text-xl text-[hsl(213,80%,15%)]">
-            {clients.length === 0 ? "Клиентов пока нет" : "Ничего не найдено"}
-          </p>
-          <p className="text-sm text-muted-foreground mt-1">
-            {clients.length === 0 ? "Создайте первый профиль выше" : "Попробуйте другой запрос"}
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {filteredClients.map((c, idx) => (
-            <div key={c.id} className="ocean-card rounded-2xl p-5 animate-fade-in" style={{ animationDelay: `${idx * 0.06}s` }}>
-              <div className="flex items-center gap-4">
-                <div className="w-11 h-11 rounded-full bg-[hsl(213,70%,28%)] flex items-center justify-center text-white text-sm font-semibold flex-shrink-0">
-                  {c.name.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase()}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <p className="font-semibold text-[hsl(213,80%,15%)]">{c.name}</p>
-                    <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full border border-blue-200">
-                      {c.booking_count} {c.booking_count === 1 ? "бронирование" : c.booking_count < 5 ? "бронирования" : "бронирований"}
-                    </span>
-                  </div>
-                  <div className="mt-1 space-y-0.5">
-                    {c.email && <p className="text-xs text-muted-foreground flex items-center gap-1.5"><Icon name="Mail" size={11} className="text-[hsl(199,65%,45%)]" />{c.email}</p>}
-                    {c.phone && <p className="text-xs text-muted-foreground flex items-center gap-1.5"><Icon name="Phone" size={11} className="text-[hsl(199,65%,45%)]" />{c.phone}</p>}
-                  </div>
-                </div>
-                <button onClick={() => openEdit(c)}
-                  className="w-9 h-9 rounded-xl bg-[hsl(199,60%,88%)] flex items-center justify-center hover:bg-[hsl(199,50%,80%)] transition-colors flex-shrink-0"
-                  title="Редактировать">
-                  <Icon name="Pencil" size={15} className="text-[hsl(213,70%,28%)]" />
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-
-  // Экран редактирования
-  if (editingClient) return (
-    <div className="space-y-5 animate-fade-in">
-      <div className="flex items-center gap-3">
-        <button onClick={() => setEditingClient(null)} className="w-9 h-9 rounded-xl bg-[hsl(199,60%,88%)] flex items-center justify-center hover:bg-[hsl(199,50%,80%)] transition-colors">
-          <Icon name="ArrowLeft" size={17} className="text-[hsl(213,70%,28%)]" />
-        </button>
-        <div>
-          <h2 className="font-display text-2xl font-semibold text-[hsl(213,80%,15%)]">{editingClient.name}</h2>
-          <p className="text-sm text-muted-foreground">{editingClient.booking_count} бронирований</p>
-        </div>
+    {/* Список */}
+    {loading ? (
+      <div className="py-10 text-center"><Icon name="Loader" size={24} className="animate-spin mx-auto text-muted-foreground" /></div>
+    ) : clients.length === 0 ? (
+      <div className="ocean-card rounded-2xl p-10 text-center">
+        <Icon name="Users" size={36} className="text-[hsl(199,65%,45%)] mx-auto mb-3 opacity-40" />
+        <p className="font-display text-xl text-[hsl(213,80%,15%)]">Клиентов пока нет</p>
+        <p className="text-sm text-muted-foreground mt-1">Создайте первый профиль выше</p>
       </div>
-      {msg && <div className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm border animate-fade-in ${msg.type === "ok" ? "bg-emerald-50 border-emerald-200 text-emerald-700" : "bg-red-50 border-red-200 text-red-700"}`}><Icon name={msg.type === "ok" ? "CheckCircle" : "AlertCircle"} size={15} />{msg.text}</div>}
-      <div className="ocean-card rounded-2xl p-6 space-y-4">
-        <h3 className="font-display text-xl font-semibold text-[hsl(213,80%,15%)]">Данные клиента</h3>
-        {[
-          { key: "name", label: "Имя и фамилия", placeholder: "Иван Иванов" },
-          { key: "email", label: "Email", placeholder: "ivan@example.com", type: "email" },
-          { key: "phone", label: "Телефон", placeholder: "+7 916 000-00-00" },
-        ].map(f => (
-          <div key={f.key}>
-            <label className="block text-xs font-medium text-muted-foreground mb-1.5">{f.label}</label>
-            <input type={f.type || "text"} className={inp} placeholder={f.placeholder}
-              value={form[f.key as keyof typeof EMPTY_CLIENT]} onChange={e => set(f.key, e.target.value)} />
+    ) : (
+      <div className="space-y-3">
+        {clients.map((c, idx) => (
+          <div key={c.id} className="ocean-card rounded-2xl p-5 animate-fade-in" style={{ animationDelay: `${idx * 0.06}s` }}>
+            <div className="flex items-center gap-4">
+              <div className="w-11 h-11 rounded-full bg-[hsl(213,70%,28%)] flex items-center justify-center text-white text-sm font-semibold flex-shrink-0">
+                {c.name.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase()}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="font-semibold text-[hsl(213,80%,15%)]">{c.name}</p>
+                  <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full border border-blue-200">
+                    {c.booking_count} {c.booking_count === 1 ? "бронирование" : c.booking_count < 5 ? "бронирования" : "бронирований"}
+                  </span>
+                </div>
+                <div className="mt-1 space-y-0.5">
+                  {c.email && <p className="text-xs text-muted-foreground flex items-center gap-1.5"><Icon name="Mail" size={11} className="text-[hsl(199,65%,45%)]" />{c.email}</p>}
+                  {c.phone && <p className="text-xs text-muted-foreground flex items-center gap-1.5"><Icon name="Phone" size={11} className="text-[hsl(199,65%,45%)]" />{c.phone}</p>}
+                </div>
+              </div>
+              <button onClick={() => openEdit(c)}
+                className="w-9 h-9 rounded-xl bg-[hsl(199,60%,88%)] flex items-center justify-center hover:bg-[hsl(199,50%,80%)] transition-colors flex-shrink-0">
+                <Icon name="Pencil" size={15} className="text-[hsl(213,70%,28%)]" />
+              </button>
+            </div>
           </div>
         ))}
       </div>
-      <div className="flex gap-3">
-        <button onClick={() => setEditingClient(null)} className="flex-1 border-2 border-[hsl(213,70%,28%)] text-[hsl(213,70%,28%)] py-3 rounded-2xl font-semibold text-sm hover:bg-blue-50 transition-colors">Отмена</button>
-        <button onClick={handleUpdate} disabled={saving} className="flex-1 bg-[hsl(213,70%,28%)] text-white py-3 rounded-2xl font-semibold text-sm hover:bg-[hsl(213,80%,20%)] transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
-          {saving ? <Icon name="Loader" size={16} className="animate-spin" /> : <Icon name="Save" size={16} />}
-          {saving ? "Сохраняем..." : "Сохранить"}
-        </button>
-      </div>
-      <div className="ocean-card rounded-2xl p-5 border-red-200 bg-red-50/50">
-        <h3 className="font-semibold text-red-700 text-sm mb-2 flex items-center gap-2"><Icon name="AlertTriangle" size={15} />Опасная зона</h3>
-        <p className="text-xs text-red-600 mb-3">Удаление профиля клиента удалит все его бронирования безвозвратно.</p>
-        {confirmDelete?.id === editingClient.id ? (
-          <div className="flex gap-2">
-            <button onClick={() => setConfirmDelete(null)} className="flex-1 border border-gray-300 text-gray-600 py-2 rounded-xl text-xs font-medium hover:bg-white transition-colors">Отмена</button>
-            <button onClick={() => handleDelete(editingClient)} disabled={deletingId === editingClient.id}
-              className="flex-1 bg-red-600 text-white py-2 rounded-xl text-xs font-semibold hover:bg-red-700 transition-colors disabled:opacity-60 flex items-center justify-center gap-1">
-              {deletingId === editingClient.id ? <Icon name="Loader" size={13} className="animate-spin" /> : <Icon name="Trash2" size={13} />}
-              Удалить навсегда
-            </button>
-          </div>
-        ) : (
-          <button onClick={() => setConfirmDelete(editingClient)} className="w-full border border-red-300 text-red-600 py-2.5 rounded-xl text-sm font-medium hover:bg-red-100 transition-colors flex items-center justify-center gap-2">
-            <Icon name="Trash2" size={14} /> Удалить профиль клиента
-          </button>
-        )}
-      </div>
-    </div>
-  );
-
-  return (
-    <div className="space-y-5 animate-fade-in">
-      {msg && <div className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm border animate-fade-in ${msg.type === "ok" ? "bg-emerald-50 border-emerald-200 text-emerald-700" : "bg-red-50 border-red-200 text-red-700"}`}><Icon name={msg.type === "ok" ? "CheckCircle" : "AlertCircle"} size={15} />{msg.text}</div>}
-
-      {/* Создать клиента */}
-      {showCreate ? (
-        <div className="ocean-card rounded-2xl p-6 space-y-4 animate-fade-in">
-          <div className="flex items-center justify-between">
-            <h3 className="font-display text-xl font-semibold text-[hsl(213,80%,15%)]">Новый клиент</h3>
-            <button onClick={() => { setShowCreate(false); setMsg(null); }} className="text-muted-foreground hover:text-[hsl(213,80%,15%)]"><Icon name="X" size={18} /></button>
-          </div>
-          {msg?.type === "err" && <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm"><Icon name="AlertCircle" size={14} />{msg.text}</div>}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {[
-              { key: "name", label: "Имя и фамилия *", placeholder: "Иван Иванов" },
-              { key: "email", label: "Email *", placeholder: "ivan@example.com", type: "email" },
-              { key: "phone", label: "Телефон", placeholder: "+7 916 000-00-00" },
-            ].map(f => (
-              <div key={f.key}>
-                <label className="block text-xs font-medium text-muted-foreground mb-1.5">{f.label}</label>
-                <input type={f.type || "text"} className={inp} placeholder={f.placeholder}
-                  value={form[f.key as keyof typeof EMPTY_CLIENT]} onChange={e => set(f.key, e.target.value)}
-                  onKeyDown={e => e.key === "Enter" && handleCreate()} />
-              </div>
-            ))}
-          </div>
-          <button onClick={handleCreate} disabled={saving}
-            className="w-full bg-[hsl(213,70%,28%)] text-white py-3 rounded-2xl font-semibold text-sm hover:bg-[hsl(213,80%,20%)] transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
-            {saving ? <Icon name="Loader" size={16} className="animate-spin" /> : <Icon name="UserPlus" size={16} />}
-            {saving ? "Создаём..." : "Создать профиль"}
-          </button>
-        </div>
-      ) : (
-        <button onClick={() => { setShowCreate(true); setForm(EMPTY_CLIENT); setMsg(null); }}
-          className="w-full wave-bg text-white rounded-2xl p-4 flex items-center gap-3 hover:opacity-90 transition-opacity group">
-          <div className="w-10 h-10 rounded-xl bg-[hsl(45,85%,55%)] flex items-center justify-center group-hover:scale-105 transition-transform flex-shrink-0">
-            <Icon name="UserPlus" size={18} className="text-[hsl(213,80%,15%)]" />
-          </div>
-          <div className="text-left">
-            <p className="font-semibold">Создать профиль клиента</p>
-            <p className="text-blue-200 text-xs">Имя, email, телефон</p>
-          </div>
-          <Icon name="ArrowRight" size={16} className="text-blue-200 ml-auto group-hover:translate-x-1 transition-transform" />
-        </button>
-      )}
-
-      {/* Список */}
-      {loading ? (
-        <div className="py-10 text-center"><Icon name="Loader" size={24} className="animate-spin mx-auto text-muted-foreground" /></div>
-      ) : clients.length === 0 ? (
-        <div className="ocean-card rounded-2xl p-10 text-center">
-          <Icon name="Users" size={36} className="text-[hsl(199,65%,45%)] mx-auto mb-3 opacity-40" />
-          <p className="font-display text-xl text-[hsl(213,80%,15%)]">Клиентов пока нет</p>
-          <p className="text-sm text-muted-foreground mt-1">Создайте первый профиль выше</p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {clients.map((c, idx) => (
-            <div key={c.id} className="ocean-card rounded-2xl p-5 animate-fade-in" style={{ animationDelay: `${idx * 0.06}s` }}>
-              <div className="flex items-center gap-4">
-                <div className="w-11 h-11 rounded-full bg-[hsl(213,70%,28%)] flex items-center justify-center text-white text-sm font-semibold flex-shrink-0">
-                  {c.name.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase()}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <p className="font-semibold text-[hsl(213,80%,15%)]">{c.name}</p>
-                    <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full border border-blue-200">
-                      {c.booking_count} {c.booking_count === 1 ? "бронирование" : c.booking_count < 5 ? "бронирования" : "бронирований"}
-                    </span>
-                  </div>
-                  <div className="mt-1 space-y-0.5">
-                    {c.email && <p className="text-xs text-muted-foreground flex items-center gap-1.5"><Icon name="Mail" size={11} className="text-[hsl(199,65%,45%)]" />{c.email}</p>}
-                    {c.phone && <p className="text-xs text-muted-foreground flex items-center gap-1.5"><Icon name="Phone" size={11} className="text-[hsl(199,65%,45%)]" />{c.phone}</p>}
-                  </div>
-                </div>
-                <button onClick={() => openEdit(c)}
-                  className="w-9 h-9 rounded-xl bg-[hsl(199,60%,88%)] flex items-center justify-center hover:bg-[hsl(199,50%,80%)] transition-colors flex-shrink-0">
-                  <Icon name="Pencil" size={15} className="text-[hsl(213,70%,28%)]" />
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
+    )}
+  </div>
+);
 }
 
 // ─── Manager Team (только для admin) ─────────────────────────────────────────
 interface ManagerRecord { id: number; name: string; email: string; is_admin: boolean; is_active: boolean; created_at: string; }
 
 function ManagerTeam({ token }: { token: string }) {
-  const [managers, setManagers] = useState<ManagerRecord[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteName, setInviteName] = useState("");
-  const [inviting, setInviting] = useState(false);
-  const [msg, setMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
+const [managers, setManagers] = useState<ManagerRecord[]>([]);
+const [loading, setLoading] = useState(true);
+const [inviteEmail, setInviteEmail] = useState("");
+const [inviteName, setInviteName] = useState("");
+const [inviting, setInviting] = useState(false);
+const [msg, setMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
 
-  const authPost = (payload: object) => fetch(API.authManager, {
-    method: "POST",
-    body: JSON.stringify({ ...payload, _token: token }),
-  });
+const authPost = (payload: object) => fetch(API.authManager, {
+  method: "POST",
+  body: JSON.stringify({ ...payload, _token: token }),
+});
 
-  const load = () => {
-    setLoading(true);
-    authPost({ action: "list-managers" })
-      .then(r => r.json())
-      .then(d => setManagers(d.managers || []))
-      .finally(() => setLoading(false));
-  };
+const load = () => {
+  setLoading(true);
+  authPost({ action: "list-managers" })
+    .then(r => r.json())
+    .then(d => setManagers(d.managers || []))
+    .finally(() => setLoading(false));
+};
 
-  useEffect(() => { load(); }, []);
+useEffect(() => { load(); }, []);
 
-  const handleInvite = async () => {
-    if (!inviteEmail || !inviteName) { setMsg({ type: "err", text: "Заполните имя и email" }); return; }
-    setInviting(true); setMsg(null);
-    try {
-      const res = await authPost({ action: "invite-manager", email: inviteEmail, name: inviteName });
-      const data = await res.json();
-      if (!res.ok) { setMsg({ type: "err", text: data.error || "Ошибка" }); return; }
-      setMsg({ type: "ok", text: `Приглашение отправлено на ${inviteEmail}` });
-      setInviteEmail(""); setInviteName("");
-      load();
-    } catch { setMsg({ type: "err", text: "Ошибка соединения" }); }
-    finally { setInviting(false); }
-  };
-
-  const handleToggle = async (id: number) => {
-    await authPost({ action: "toggle-manager", manager_id: id });
+const handleInvite = async () => {
+  if (!inviteEmail || !inviteName) { setMsg({ type: "err", text: "Заполните имя и email" }); return; }
+  setInviting(true); setMsg(null);
+  try {
+    const res = await authPost({ action: "invite-manager", email: inviteEmail, name: inviteName });
+    const data = await res.json();
+    if (!res.ok) { setMsg({ type: "err", text: data.error || "Ошибка" }); return; }
+    setMsg({ type: "ok", text: `Приглашение отправлено на ${inviteEmail}` });
+    setInviteEmail(""); setInviteName("");
     load();
-  };
+  } catch { setMsg({ type: "err", text: "Ошибка соединения" }); }
+  finally { setInviting(false); }
+};
 
-  return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="ocean-card rounded-2xl p-6 space-y-4">
-        <h3 className="font-display text-xl font-semibold text-[hsl(213,80%,15%)]">Пригласить менеджера</h3>
-        <p className="text-sm text-muted-foreground">Менеджер получит письмо с кодом для создания аккаунта</p>
-        {msg && (
-          <div className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm border animate-fade-in ${msg.type === "ok" ? "bg-emerald-50 border-emerald-200 text-emerald-700" : "bg-red-50 border-red-200 text-red-700"}`}>
-            <Icon name={msg.type === "ok" ? "CheckCircle" : "AlertCircle"} size={15} />
-            {msg.text}
-          </div>
-        )}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div>
-            <label className="block text-xs font-medium text-muted-foreground mb-1.5">Имя менеджера</label>
-            <input className="w-full bg-blue-50 border border-blue-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[hsl(199,65%,45%)]"
-              placeholder="Мария Иванова" value={inviteName} onChange={e => setInviteName(e.target.value)} />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-muted-foreground mb-1.5">Email</label>
-            <input type="email" className="w-full bg-blue-50 border border-blue-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[hsl(199,65%,45%)]"
-              placeholder="maria@abeona.club" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} />
-          </div>
+const handleToggle = async (id: number) => {
+  await authPost({ action: "toggle-manager", manager_id: id });
+  load();
+};
+
+return (
+  <div className="space-y-6 animate-fade-in">
+    <div className="ocean-card rounded-2xl p-6 space-y-4">
+      <h3 className="font-display text-xl font-semibold text-[hsl(213,80%,15%)]">Пригласить менеджера</h3>
+      <p className="text-sm text-muted-foreground">Менеджер получит письмо с кодом для создания аккаунта</p>
+      {msg && (
+        <div className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm border animate-fade-in ${msg.type === "ok" ? "bg-emerald-50 border-emerald-200 text-emerald-700" : "bg-red-50 border-red-200 text-red-700"}`}>
+          <Icon name={msg.type === "ok" ? "CheckCircle" : "AlertCircle"} size={15} />
+          {msg.text}
         </div>
-        <button onClick={handleInvite} disabled={inviting}
-          className="w-full bg-[hsl(213,70%,28%)] text-white py-3 rounded-xl font-semibold text-sm hover:bg-[hsl(213,80%,20%)] transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
-          {inviting ? <Icon name="Loader" size={15} className="animate-spin" /> : <Icon name="Send" size={15} />}
-          {inviting ? "Отправляем..." : "Отправить приглашение"}
-        </button>
+      )}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div>
+          <label className="block text-xs font-medium text-muted-foreground mb-1.5">Имя менеджера</label>
+          <input className="w-full bg-blue-50 border border-blue-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[hsl(199,65%,45%)]"
+            placeholder="Мария Иванова" value={inviteName} onChange={e => setInviteName(e.target.value)} />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-muted-foreground mb-1.5">Email</label>
+          <input type="email" className="w-full bg-blue-50 border border-blue-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[hsl(199,65%,45%)]"
+            placeholder="maria@abeona.club" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} />
+        </div>
       </div>
-
-      <div className="ocean-card rounded-2xl p-5">
-        <h3 className="font-display text-xl font-semibold text-[hsl(213,80%,15%)] mb-4">Команда</h3>
-        {loading ? (
-          <div className="py-8 text-center"><Icon name="Loader" size={24} className="animate-spin mx-auto text-muted-foreground" /></div>
-        ) : (
-          <div className="space-y-3">
-            {managers.map((m, idx) => (
-              <div key={m.id} className={`flex items-center gap-4 p-4 rounded-xl border transition-all animate-fade-in ${m.is_active ? "bg-white border-blue-100" : "bg-gray-50 border-gray-200 opacity-60"}`}
-                style={{ animationDelay: `${idx * 0.06}s` }}>
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold flex-shrink-0 ${m.is_admin ? "bg-[hsl(45,85%,55%)] text-[hsl(213,80%,15%)]" : "bg-[hsl(213,70%,28%)] text-white"}`}>
-                  {m.name.split(" ").map((n: string) => n[0]).join("").slice(0, 2)}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <p className="font-semibold text-sm text-[hsl(213,80%,15%)]">{m.name}</p>
-                    {m.is_admin && <span className="text-[10px] bg-[hsl(45,85%,90%)] text-[hsl(38,75%,35%)] border border-[hsl(45,85%,70%)] px-2 py-0.5 rounded-full font-semibold">Главный</span>}
-                    {!m.is_active && <span className="text-[10px] bg-gray-100 text-gray-500 border border-gray-300 px-2 py-0.5 rounded-full">Отключён</span>}
-                  </div>
-                  <p className="text-xs text-muted-foreground">{m.email}</p>
-                </div>
-                {!m.is_admin && (
-                  <button onClick={() => handleToggle(m.id)}
-                    className={`text-xs px-3 py-1.5 rounded-lg border font-medium transition-colors ${m.is_active ? "border-red-200 text-red-600 hover:bg-red-50" : "border-emerald-200 text-emerald-600 hover:bg-emerald-50"}`}>
-                    {m.is_active ? "Отключить" : "Включить"}
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      <button onClick={handleInvite} disabled={inviting}
+        className="w-full bg-[hsl(213,70%,28%)] text-white py-3 rounded-xl font-semibold text-sm hover:bg-[hsl(213,80%,20%)] transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
+        {inviting ? <Icon name="Loader" size={15} className="animate-spin" /> : <Icon name="Send" size={15} />}
+        {inviting ? "Отправляем..." : "Отправить приглашение"}
+      </button>
     </div>
-  );
+
+    <div className="ocean-card rounded-2xl p-5">
+      <h3 className="font-display text-xl font-semibold text-[hsl(213,80%,15%)] mb-4">Команда</h3>
+      {loading ? (
+        <div className="py-8 text-center"><Icon name="Loader" size={24} className="animate-spin mx-auto text-muted-foreground" /></div>
+      ) : (
+        <div className="space-y-3">
+          {managers.map((m, idx) => (
+            <div key={m.id} className={`flex items-center gap-4 p-4 rounded-xl border transition-all animate-fade-in ${m.is_active ? "bg-white border-blue-100" : "bg-gray-50 border-gray-200 opacity-60"}`}
+              style={{ animationDelay: `${idx * 0.06}s` }}>
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold flex-shrink-0 ${m.is_admin ? "bg-[hsl(45,85%,55%)] text-[hsl(213,80%,15%)]" : "bg-[hsl(213,70%,28%)] text-white"}`}>
+                {m.name.split(" ").map((n: string) => n[0]).join("").slice(0, 2)}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="font-semibold text-sm text-[hsl(213,80%,15%)]">{m.name}</p>
+                  {m.is_admin && <span className="text-[10px] bg-[hsl(45,85%,90%)] text-[hsl(38,75%,35%)] border border-[hsl(45,85%,70%)] px-2 py-0.5 rounded-full font-semibold">Главный</span>}
+                  {!m.is_active && <span className="text-[10px] bg-gray-100 text-gray-500 border border-gray-300 px-2 py-0.5 rounded-full">Отключён</span>}
+                </div>
+                <p className="text-xs text-muted-foreground">{m.email}</p>
+              </div>
+              {!m.is_admin && (
+                <button onClick={() => handleToggle(m.id)}
+                  className={`text-xs px-3 py-1.5 rounded-lg border font-medium transition-colors ${m.is_active ? "border-red-200 text-red-600 hover:bg-red-50" : "border-emerald-200 text-emerald-600 hover:bg-emerald-50"}`}>
+                  {m.is_active ? "Отключить" : "Включить"}
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  </div>
+);
 }
 
 // ─── Accept Invite Screen ─────────────────────────────────────────────────────
