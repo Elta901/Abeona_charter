@@ -1688,9 +1688,11 @@ function ManagerClients({ token }: { token?: string }) {
 
   const load = () => {
     setLoading(true);
-    fetch(`${API.bookings}?token=${t}&_action=list-clients`, {
-      method: "POST", body: JSON.stringify({ _action: "list-clients" }),
-    })
+   fetch(`${API.bookings}?token=${t}`, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ _action: "list-clients" }),
+})
       .then(r => r.json())
       .then(d => setClients(d.clients || []))
       .catch(() => {})
