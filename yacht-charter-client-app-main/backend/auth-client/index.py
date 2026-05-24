@@ -97,7 +97,7 @@ def handle_send_otp(body: dict) -> dict:
        cur.execute(
     "INSERT INTO sessions (token, user_id, role, expires_at) VALUES (%s, %s, %s, %s)",
     [token, client_id, "client", session_expires_at],
-)
+           )
         conn.commit()
         cur.close()
 
