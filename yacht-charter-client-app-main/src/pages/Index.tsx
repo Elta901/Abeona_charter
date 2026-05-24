@@ -1761,72 +1761,258 @@ function ManagerClients({ token }: { token?: string }) {
   const inp = "w-full bg-blue-50 border border-blue-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[hsl(199,65%,45%)] focus:border-transparent";
 
   // ── Общая форма полей ─────────────────────────────────────────────────────
-  const FormFields = () => (
-    <div className="space-y-5">
-      {/* Основные */}
-      <div className="space-y-3">
-        <p className="text-xs font-bold text-[hsl(199,65%,45%)] uppercase tracking-widest">Основные данные</p>
-        <div>
-          <label className="block text-xs font-medium text-muted-foreground mb-1.5">Имя и фамилия <span className="text-red-500">*</span></label>
-          <input className={inp} placeholder="Иван Иванов" value={form.name} onChange={e => set("name", e.target.value)} />
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div>
-            <label className="block text-xs font-medium text-muted-foreground mb-1.5">Email <span className="text-red-500">*</span></label>
-            <input type="email" className={inp} placeholder="ivan@example.com" value={form.email} onChange={e => set("email", e.target.value)} />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-muted-foreground mb-1.5">Телефон</label>
-            <input className={inp} placeholder="+7 916 000-00-00" value={form.phone} onChange={e => set("phone", e.target.value)} />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-muted-foreground mb-1.5">Telegram</label>
-            <input className={inp} placeholder="@username" value={form.telegram} onChange={e => set("telegram", e.target.value)} />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-muted-foreground mb-1.5">WhatsApp</label>
-            <input className={inp} placeholder="+79160000000" value={form.whatsapp} onChange={e => set("whatsapp", e.target.value)} />
-          </div>
-        </div>
-      </div>
-      {/* Личные */}
-      <div className="space-y-3">
-        <p className="text-xs font-bold text-[hsl(199,65%,45%)] uppercase tracking-widest">Личные данные</p>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div>
-            <label className="block text-xs font-medium text-muted-foreground mb-1.5">Дата рождения</label>
-            <input type="date" className={inp} value={form.birth_date} onChange={e => set("birth_date", e.target.value)} />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-muted-foreground mb-1.5">Гражданство</label>
-            <select className={`${inp} appearance-none`} value={form.nationality} onChange={e => set("nationality", e.target.value)}>
-              <option value="RU">🇷🇺 Россия</option>
-              <option value="UA">🇺🇦 Украина</option>
-              <option value="BY">🇧🇾 Беларусь</option>
-              <option value="KZ">🇰🇿 Казахстан</option>
-              <option value="OTHER">Другое</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-muted-foreground mb-1.5">Серия паспорта</label>
-            <input className={inp} placeholder="1234" value={form.passport_series} onChange={e => set("passport_series", e.target.value)} />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-muted-foreground mb-1.5">Номер паспорта</label>
-            <input className={inp} placeholder="567890" value={form.passport_number} onChange={e => set("passport_number", e.target.value)} />
-          </div>
-        </div>
-      </div>
-      {/* Заметки */}
+const formFields = (
+  <div className="space-y-5">
+    {/* Основные */}
+    <div className="space-y-3">
+      <p className="text-xs font-bold text-[hsl(199,65%,45%)] uppercase tracking-widest">Основные данные</p>
       <div>
-        <label className="block text-xs font-medium text-muted-foreground mb-1.5">Заметки</label>
-        <textarea className={`${inp} resize-none`} rows={3}
-          placeholder="Пожелания, особенности, важная информация..."
-          value={form.notes} onChange={e => set("notes", e.target.value)} />
+        <label className="block text-xs font-medium text-muted-foreground mb-1.5">Имя и фамилия <span className="text-red-500">*</span></label>
+        <input className={inp} placeholder="Иван Иванов" value={form.name} onChange={e => set("name", e.target.value)} />
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div>
+          <label className="block text-xs font-medium text-muted-foreground mb-1.5">Email <span className="text-red-500">*</span></label>
+          <input type="email" className={inp} placeholder="ivan@example.com" value={form.email} onChange={e => set("email", e.target.value)} />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-muted-foreground mb-1.5">Телефон</label>
+          <input className={inp} placeholder="+7 916 000-00-00" value={form.phone} onChange={e => set("phone", e.target.value)} />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-muted-foreground mb-1.5">Telegram</label>
+          <input className={inp} placeholder="@username" value={form.telegram} onChange={e => set("telegram", e.target.value)} />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-muted-foreground mb-1.5">WhatsApp</label>
+          <input className={inp} placeholder="+79160000000" value={form.whatsapp} onChange={e => set("whatsapp", e.target.value)} />
+        </div>
       </div>
     </div>
-  );
 
+    {/* Личные */}
+    <div className="space-y-3">
+      <p className="text-xs font-bold text-[hsl(199,65%,45%)] uppercase tracking-widest">Личные данные</p>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div>
+          <label className="block text-xs font-medium text-muted-foreground mb-1.5">Дата рождения</label>
+          <input type="date" className={inp} value={form.birth_date} onChange={e => set("birth_date", e.target.value)} />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-muted-foreground mb-1.5">Гражданство</label>
+          <select className={`${inp} appearance-none`} value={form.nationality} onChange={e => set("nationality", e.target.value)}>
+            <option value="AF">🇦🇫 Афганистан</option>
+            <option value="AL">🇦🇱 Албания</option>
+            <option value="DZ">🇩🇿 Алжир</option>
+            <option value="AD">🇦🇩 Андорра</option>
+            <option value="AO">🇦🇴 Ангола</option>
+            <option value="AG">🇦🇬 Антигуа и Барбуда</option>
+            <option value="AR">🇦🇷 Аргентина</option>
+            <option value="AM">🇦🇲 Армения</option>
+            <option value="AU">🇦🇺 Австралия</option>
+            <option value="AT">🇦🇹 Австрия</option>
+            <option value="AZ">🇦🇿 Азербайджан</option>
+            <option value="BS">🇧🇸 Багамы</option>
+            <option value="BH">🇧🇭 Бахрейн</option>
+            <option value="BD">🇧🇩 Бангладеш</option>
+            <option value="BB">🇧🇧 Барбадос</option>
+            <option value="BY">🇧🇾 Беларусь</option>
+            <option value="BE">🇧🇪 Бельгия</option>
+            <option value="BZ">🇧🇿 Белиз</option>
+            <option value="BJ">🇧🇯 Бенин</option>
+            <option value="BT">🇧🇹 Бутан</option>
+            <option value="BO">🇧🇴 Боливия</option>
+            <option value="BA">🇧🇦 Босния и Герцеговина</option>
+            <option value="BW">🇧🇼 Ботсвана</option>
+            <option value="BR">🇧🇷 Бразилия</option>
+            <option value="BN">🇧🇳 Бруней</option>
+            <option value="BG">🇧🇬 Болгария</option>
+            <option value="BF">🇧🇫 Буркина-Фасо</option>
+            <option value="BI">🇧🇮 Бурунди</option>
+            <option value="CV">🇨🇻 Кабо-Верде</option>
+            <option value="KH">🇰🇭 Камбоджа</option>
+            <option value="CM">🇨🇲 Камерун</option>
+            <option value="CA">🇨🇦 Канада</option>
+            <option value="CF">🇨🇫 ЦАР</option>
+            <option value="TD">🇹🇩 Чад</option>
+            <option value="CL">🇨🇱 Чили</option>
+            <option value="CN">🇨🇳 Китай</option>
+            <option value="CO">🇨🇴 Колумбия</option>
+            <option value="KM">🇰🇲 Коморы</option>
+            <option value="CG">🇨🇬 Конго</option>
+            <option value="CR">🇨🇷 Коста-Рика</option>
+            <option value="HR">🇭🇷 Хорватия</option>
+            <option value="CU">🇨🇺 Куба</option>
+            <option value="CY">🇨🇾 Кипр</option>
+            <option value="CZ">🇨🇿 Чехия</option>
+            <option value="DK">🇩🇰 Дания</option>
+            <option value="DJ">🇩🇯 Джибути</option>
+            <option value="DM">🇩🇲 Доминика</option>
+            <option value="DO">🇩🇴 Доминиканская Республика</option>
+            <option value="EC">🇪🇨 Эквадор</option>
+            <option value="EG">🇪🇬 Египет</option>
+            <option value="SV">🇸🇻 Сальвадор</option>
+            <option value="GQ">🇬🇶 Экваториальная Гвинея</option>
+            <option value="ER">🇪🇷 Эритрея</option>
+            <option value="EE">🇪🇪 Эстония</option>
+            <option value="SZ">🇸🇿 Эсватини</option>
+            <option value="ET">🇪🇹 Эфиопия</option>
+            <option value="FJ">🇫🇯 Фиджи</option>
+            <option value="FI">🇫🇮 Финляндия</option>
+            <option value="FR">🇫🇷 Франция</option>
+            <option value="GA">🇬🇦 Габон</option>
+            <option value="GM">🇬🇲 Гамбия</option>
+            <option value="GE">🇬🇪 Грузия</option>
+            <option value="DE">🇩🇪 Германия</option>
+            <option value="GH">🇬🇭 Гана</option>
+            <option value="GR">🇬🇷 Греция</option>
+            <option value="GD">🇬🇩 Гренада</option>
+            <option value="GT">🇬🇹 Гватемала</option>
+            <option value="GN">🇬🇳 Гвинея</option>
+            <option value="GW">🇬🇼 Гвинея-Бисау</option>
+            <option value="GY">🇬🇾 Гайана</option>
+            <option value="HT">🇭🇹 Гаити</option>
+            <option value="HN">🇭🇳 Гондурас</option>
+            <option value="HU">🇭🇺 Венгрия</option>
+            <option value="IS">🇮🇸 Исландия</option>
+            <option value="IN">🇮🇳 Индия</option>
+            <option value="ID">🇮🇩 Индонезия</option>
+            <option value="IR">🇮🇷 Иран</option>
+            <option value="IQ">🇮🇶 Ирак</option>
+            <option value="IE">🇮🇪 Ирландия</option>
+            <option value="IL">🇮🇱 Израиль</option>
+            <option value="IT">🇮🇹 Италия</option>
+            <option value="JM">🇯🇲 Ямайка</option>
+            <option value="JP">🇯🇵 Япония</option>
+            <option value="JO">🇯🇴 Иордания</option>
+            <option value="KZ">🇰🇿 Казахстан</option>
+            <option value="KE">🇰🇪 Кения</option>
+            <option value="KI">🇰🇮 Кирибати</option>
+            <option value="KW">🇰🇼 Кувейт</option>
+            <option value="KG">🇰🇬 Кыргызстан</option>
+            <option value="LA">🇱🇦 Лаос</option>
+            <option value="LV">🇱🇻 Латвия</option>
+            <option value="LB">🇱🇧 Ливан</option>
+            <option value="LS">🇱🇸 Лесото</option>
+            <option value="LR">🇱🇷 Либерия</option>
+            <option value="LY">🇱🇾 Ливия</option>
+            <option value="LI">🇱🇮 Лихтенштейн</option>
+            <option value="LT">🇱🇹 Литва</option>
+            <option value="LU">🇱🇺 Люксембург</option>
+            <option value="MG">🇲🇬 Мадагаскар</option>
+            <option value="MW">🇲🇼 Малави</option>
+            <option value="MY">🇲🇾 Малайзия</option>
+            <option value="MV">🇲🇻 Мальдивы</option>
+            <option value="ML">🇲🇱 Мали</option>
+            <option value="MT">🇲🇹 Мальта</option>
+            <option value="MH">🇲🇭 Маршалловы острова</option>
+            <option value="MR">🇲🇷 Мавритания</option>
+            <option value="MU">🇲🇺 Маврикий</option>
+            <option value="MX">🇲🇽 Мексика</option>
+            <option value="FM">🇫🇲 Микронезия</option>
+            <option value="MD">🇲🇩 Молдова</option>
+            <option value="MC">🇲🇨 Монако</option>
+            <option value="MN">🇲🇳 Монголия</option>
+            <option value="ME">🇲🇪 Черногория</option>
+            <option value="MA">🇲🇦 Марокко</option>
+            <option value="MZ">🇲🇿 Мозамбик</option>
+            <option value="MM">🇲🇲 Мьянма</option>
+            <option value="NA">🇳🇦 Намибия</option>
+            <option value="NR">🇳🇷 Науру</option>
+            <option value="NP">🇳🇵 Непал</option>
+            <option value="NL">🇳🇱 Нидерланды</option>
+            <option value="NZ">🇳🇿 Новая Зеландия</option>
+            <option value="NI">🇳🇮 Никарагуа</option>
+            <option value="NE">🇳🇪 Нигер</option>
+            <option value="NG">🇳🇬 Нигерия</option>
+            <option value="MK">🇲🇰 Северная Македония</option>
+            <option value="NO">🇳🇴 Норвегия</option>
+            <option value="OM">🇴🇲 Оман</option>
+            <option value="PK">🇵🇰 Пакистан</option>
+            <option value="PW">🇵🇼 Палау</option>
+            <option value="PA">🇵🇦 Панама</option>
+            <option value="PG">🇵🇬 Папуа — Новая Гвинея</option>
+            <option value="PY">🇵🇾 Парагвай</option>
+            <option value="PE">🇵🇪 Перу</option>
+            <option value="PH">🇵🇭 Филиппины</option>
+            <option value="PL">🇵🇱 Польша</option>
+            <option value="PT">🇵🇹 Португалия</option>
+            <option value="QA">🇶🇦 Катар</option>
+            <option value="RO">🇷🇴 Румыния</option>
+            <option value="RU">🇷🇺 Россия</option>
+            <option value="RW">🇷🇼 Руанда</option>
+            <option value="KN">🇰🇳 Сент-Китс и Невис</option>
+            <option value="LC">🇱🇨 Сент-Люсия</option>
+            <option value="VC">🇻🇨 Сент-Винсент и Гренадины</option>
+            <option value="WS">🇼🇸 Самоа</option>
+            <option value="SM">🇸🇲 Сан-Марино</option>
+            <option value="ST">🇸🇹 Сан-Томе и Принсипи</option>
+            <option value="SA">🇸🇦 Саудовская Аравия</option>
+            <option value="SN">🇸🇳 Сенегал</option>
+            <option value="RS">🇷🇸 Сербия</option>
+            <option value="SC">🇸🇨 Сейшелы</option>
+            <option value="SL">🇸🇱 Сьерра-Леоне</option>
+            <option value="SG">🇸🇬 Сингапур</option>
+            <option value="SK">🇸🇰 Словакия</option>
+            <option value="SI">🇸🇮 Словения</option>
+            <option value="SB">🇸🇧 Соломоновы острова</option>
+            <option value="SO">🇸🇴 Сомали</option>
+            <option value="ZA">🇿🇦 ЮАР</option>
+            <option value="SS">🇸🇸 Южный Судан</option>
+            <option value="ES">🇪🇸 Испания</option>
+            <option value="LK">🇱🇰 Шри-Ланка</option>
+            <option value="SD">🇸🇩 Судан</option>
+            <option value="SR">🇸🇷 Суринам</option>
+            <option value="SE">🇸🇪 Швеция</option>
+            <option value="CH">🇨🇭 Швейцария</option>
+            <option value="SY">🇸🇾 Сирия</option>
+            <option value="TW">🇹🇼 Тайвань</option>
+            <option value="TJ">🇹🇯 Таджикистан</option>
+            <option value="TZ">🇹🇿 Танзания</option>
+            <option value="TH">🇹🇭 Таиланд</option>
+            <option value="TL">🇹🇱 Тимор-Лесте</option>
+            <option value="TG">🇹🇬 Того</option>
+            <option value="TO">🇹🇴 Тонга</option>
+            <option value="TT">🇹🇹 Тринидад и Тобаго</option>
+            <option value="TN">🇹🇳 Тунис</option>
+            <option value="TR">🇹🇷 Турция</option>
+            <option value="TM">🇹🇲 Туркменистан</option>
+            <option value="TV">🇹🇻 Тувалу</option>
+            <option value="UG">🇺🇬 Уганда</option>
+            <option value="UA">🇺🇦 Украина</option>
+            <option value="AE">🇦🇪 ОАЭ</option>
+            <option value="GB">🇬🇧 Великобритания</option>
+            <option value="US">🇺🇸 США</option>
+            <option value="UY">🇺🇾 Уругвай</option>
+            <option value="UZ">🇺🇿 Узбекистан</option>
+            <option value="VU">🇻🇺 Вануату</option>
+            <option value="VE">🇻🇪 Венесуэла</option>
+            <option value="VN">🇻🇳 Вьетнам</option>
+            <option value="YE">🇾🇪 Йемен</option>
+            <option value="ZM">🇿🇲 Замбия</option>
+            <option value="ZW">🇿🇼 Зимбабве</option>
+          </select>
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-muted-foreground mb-1.5">Серия паспорта</label>
+          <input className={inp} placeholder="1234" value={form.passport_series} onChange={e => set("passport_series", e.target.value)} />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-muted-foreground mb-1.5">Номер паспорта</label>
+          <input className={inp} placeholder="567890" value={form.passport_number} onChange={e => set("passport_number", e.target.value)} />
+        </div>
+      </div>
+    </div>
+
+    {/* Заметки */}
+    <div>
+      <label className="block text-xs font-medium text-muted-foreground mb-1.5">Заметки</label>
+      <textarea className={`${inp} resize-none`} rows={3}
+        placeholder="Пожелания, особенности, важная информация..."
+        value={form.notes} onChange={e => set("notes", e.target.value)} />
+    </div>
+  </div>
+);
   // ── Экран редактирования ──────────────────────────────────────────────────
   if (editingClient) return (
     <div className="space-y-5 animate-fade-in">
