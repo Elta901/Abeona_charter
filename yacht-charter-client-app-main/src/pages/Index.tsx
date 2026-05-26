@@ -2034,7 +2034,7 @@ const formFields = (
 
       <div className="ocean-card rounded-2xl p-6">
   {formFields}
-       </div>
+      </div>
 
       <div className="flex gap-3">
         <button onClick={() => { setEditingClient(null); setMsg(null); }}
