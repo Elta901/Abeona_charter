@@ -1201,10 +1201,14 @@ function ManagerEditBooking({ booking, token, onBack, onSaved }: {
   });
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [confirmDel, setConfirmDel] = useState(false); // ✅ ИСПРАВЛЕНО: объявлено состояние
+  const [confirmDel, setConfirmDel] = useState(false);
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
-  const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }));
+
+  // ✅ ИСПРАВЛЕНО: useCallback чтобы функция не пересоздавалась на каждый рендер
+  const set = useCallback((k: string, v: string) => {
+    setForm(f => ({ ...f, [k]: v }));
+  }, []);
 
   const handleDelete = async () => {
     setDeleting(true);
@@ -1212,6 +1216,7 @@ function ManagerEditBooking({ booking, token, onBack, onSaved }: {
       const t = token || localStorage.getItem("yc_token") || "";
       await fetch(`${API.bookings}?token=${t}`, {
         method: "POST",
+        headers: { "Content-Type": "application/json" }, // ✅ ИСПРАВЛЕНО
         body: JSON.stringify({ _method: "DELETE", _target: "booking", id: booking.id }),
       });
       onSaved(); onBack();
@@ -1225,6 +1230,7 @@ function ManagerEditBooking({ booking, token, onBack, onSaved }: {
       const t = token || localStorage.getItem("yc_token") || "";
       const res = await fetch(`${API.bookings}?token=${t}`, {
         method: "POST",
+        headers: { "Content-Type": "application/json" }, // ✅ ИСПРАВЛЕНО
         body: JSON.stringify({
           _method: "PUT", id: booking.id,
           ...form,
